@@ -1,7 +1,7 @@
 [project]
 name = "openneuro-t1"
 version = "0.1.0"
-description = "Add your description here"
+description = "Reproducible FSL preprocessing of public OpenNeuro T1-weighted MRI with NiWrap, Docker and Snakemake."
 readme = "README.md"
 authors = [
     { name = "Raihan Abdul Vaheed", email = "rvaheed14@gmail.com" }
@@ -12,13 +12,15 @@ dependencies = [
     "nibabel>=5.4.2",
     "nilearn>=0.14.1",
     "niwrap==1.1.0",
+    "numpy>=2.5.4",
     "pandas>=3.1.0",
+    "pyyaml>=6.0.3",
     "snakemake>=9.15.0",
     "templateflow>=25.1.2",
 ]
 
 [project.scripts]
-openneuro-t1 = "openneuro_t1:main"
+openneuro-t1 = "openneuro_t1.run_subject:main"
 
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]

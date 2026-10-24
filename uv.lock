@@ -1504,7 +1504,9 @@ dependencies = [
     { name = "nibabel" },
     { name = "nilearn" },
     { name = "niwrap" },
+    { name = "numpy" },
     { name = "pandas" },
+    { name = "pyyaml" },
     { name = "snakemake" },
     { name = "templateflow" },
 ]
@@ -1522,7 +1524,9 @@ requires-dist = [
     { name = "nibabel", specifier = ">=5.4.2" },
     { name = "nilearn", specifier = ">=0.14.1" },
     { name = "niwrap", specifier = "==1.1.0" },
+    { name = "numpy", specifier = ">=2.5.4" },
     { name = "pandas", specifier = ">=3.1.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "snakemake", specifier = ">=9.15.0" },
     { name = "templateflow", specifier = ">=25.1.2" },
 ]

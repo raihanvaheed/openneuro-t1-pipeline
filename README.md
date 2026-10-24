@@ -16,7 +16,7 @@ This is an engineering project: it describes a pipeline and makes no research cl
 
 ```bash
 uv sync
-uv run python3 -m openneuro_t1.run_subject --subject 01
+uv run openneuro-t1 --subject 01
 ```
 
 Finished steps are skipped on a rerun; add `--force` to redo them. The first run pulls the FSL Docker image, so it is slow.
@@ -31,7 +31,11 @@ All three are regenerable and gitignored. The pipeline is described in [docs/arc
 
 ## Data
 
-The input is OpenNeuro dataset [ds000102](https://openneuro.org/datasets/ds000102), "Flanker task (event-related)", by Kelly AMC, Uddin LQ, Biswal BB, Castellanos FX and Milham MP. It is released under the PDDL (Public Domain Dedication and License). Its `dataset_description.json` asks for this acknowledgement: "This data was obtained from the OpenfMRI database. Its accession number is ds000102". No imaging data is stored in this repository.
+The input is OpenNeuro dataset ds000102. Cite it as:
+
+> Kelly AMC, Uddin LQ, Biswal BB, Castellanos FX, Milham MP (2018). Flanker task (event-related). OpenNeuro, dataset ds000102. Originally shared through the OpenfMRI database (accession ds000102). OpenNeuro lists no DOI for this dataset. https://openneuro.org/datasets/ds000102
+
+The dataset is released under the PDDL (Public Domain Dedication and License), as stated in its `dataset_description.json`. No imaging data is stored in this repository.
 
 ## Credits
 

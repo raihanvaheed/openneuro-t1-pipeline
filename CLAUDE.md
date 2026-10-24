@@ -16,7 +16,7 @@ Run these yourself. Never assume a check passes.
 - Workflow dry run (from step 2): `uv run snakemake -n`
 - Workflow run (from step 2): `uv run snakemake --cores 4`
 - Rule graph (from step 2): `uv run snakemake --rulegraph | dot -Tsvg > docs/rulegraph.svg`
-- Setup check: `bash local/check_setup.sh`
+- Setup check: `bash local/check_setup.sh` (never with `--aws`: that option signs in to the owner's AWS account)
 
 Every Python command goes through `uv run`. Never `pip`, and never `python`: always `python3`.
 
@@ -31,7 +31,7 @@ Only what the file tree does not already show.
 - `TEMPLATEFLOW_HOME` is set to `resources/templateflow` before TemplateFlow is imported, so the template lives with the project instead of a hidden cache.
 - The FSL image is amd64 and runs under emulation on Apple Silicon. If it fails because of the platform, `DOCKER_DEFAULT_PLATFORM=linux/amd64` is the one allowed fix, and using it must be recorded.
 - A step is finished only when all its outputs exist. A failed step must not leave partial outputs that a later run would mistake for finished ones.
-- Every run writes `results/provenance/sub-<id>_runinfo.json`: package versions, every Docker image used with its digest, and seconds per step.
+- Every run that executes at least one step writes `results/provenance/sub-<id>_runinfo.json`: package versions, every Docker image used with its digest, and seconds per step. A run where every step is skipped leaves the existing record untouched, so it always describes the run that made the outputs.
 
 ## Invariants
 
