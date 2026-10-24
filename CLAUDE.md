@@ -9,7 +9,7 @@ openneuro-t1-pipeline is a reproducible neuroimaging pipeline. It pulls public T
 Run these yourself. Never assume a check passes.
 
 - Install or sync the environment: `uv sync`
-- Run one subject: `uv run python3 -m openneuro_t1.run_subject --subject 01` (add `--force` to redo finished steps)
+- Run one subject: `uv run openneuro-t1 --subject 01` (add `--force` to redo finished steps)
 - Test: `uv run pytest -q` — single file: `uv run pytest tests/test_paths.py -q`
 - Lint: `uv run ruff check .`
 - Format: `uv run ruff format .` — check only: `uv run ruff format --check .`
@@ -86,6 +86,21 @@ It holds two kinds of thing:
 Scratch output that no one asked for still belongs in the session scratchpad, not here. If `local/` does
 not exist, create it. Anything you put there must not be needed to build, test or run the project.
 
+# Decisions journal
+
+`local/DECISIONS.md` records every notable decision and why, indexed by step. The owner and his planning
+chat write entries too. Read its format section before adding anything.
+
+- At the end of every step, before writing `local/explanation.md`, append one entry for each decision you
+  made that the step's instructions did not specify. Use the entry format in the file, the next free ID
+  for the step (for example `S2-01`), "Decided by: Claude Code (build)" and "Status: Proposed".
+- Append only. Never edit, reorder or delete an existing entry, and never change a status; the owner does
+  that when he reviews the step.
+- Record decisions worth explaining months from now: a design choice, a rejected alternative, a tradeoff,
+  a deviation from the prompt. Not routine choices such as a variable name or a helper's location.
+- In the PR description's "Decisions I made" section, list each decision by its journal ID with a one-line
+  summary, instead of repeating the full entry.
+
 # Explanation file
 
 At the end of every step, before writing the pull request description, write `local/explanation.md`. It is
@@ -121,7 +136,7 @@ Before the final message, all of these are true.
 3. Any step that touches processing was run on real data, and its real output and timings are included.
 4. New behaviour has a test that fails without the change.
 5. No invariant was weakened.
-6. Unspecified decisions and open questions are written down.
+6. Unspecified decisions are appended to `local/DECISIONS.md`, and open questions are written down.
 
 ## Final message
 
