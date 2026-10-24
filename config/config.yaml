@@ -1,0 +1,17 @@
+dataset: ds000102
+s3_uri: s3://openneuro.org/ds000102
+subjects: ["01"]
+template: MNI152NLin2009cAsym
+template_resolution: 1
+paths:
+  raw: resources/ds000102
+  templateflow: resources/templateflow
+  templates: resources/templates
+  results: results
+  logs: logs
+bet:
+  frac: 0.5
+fast:
+  classes: 3
+flirt:
+  dof: 12

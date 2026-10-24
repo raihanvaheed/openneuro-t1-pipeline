@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.venv/
+
+# Project data and outputs (never committed)
+local/
+resources/
+results/
+logs/
+
+# Secrets and OS files
+.env
+*.pem
+.DS_Store
+
+# Egg metadata (directory form)
+*.egg-info/
