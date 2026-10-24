@@ -1,3 +1,4 @@
+from dataclasses import fields
 from pathlib import Path
 
 import pytest
@@ -145,3 +146,82 @@ def test_atomic_output_keeps_the_previous_file_on_failure(tmp_path):
         partial.write_text("half")
         raise RuntimeError("tool failed")
     assert destination.read_text() == "previous"
+
+
+def format_for(value, subject):
+    """A layout built with the placeholder, with the placeholder filled in."""
+    if isinstance(value, Path):
+        return Path(str(value).format(subject=subject))
+    if isinstance(value, dict):
+        return {key: format_for(item, subject) for key, item in value.items()}
+    if isinstance(value, str):
+        return value.format(subject=subject)
+    return value
+
+
+def test_subject_layout_with_the_placeholder_matches_a_real_subject():
+    raw = Path("resources/ds000102")
+    placeholder = paths.subject_paths(
+        paths.SUBJECT_PLACEHOLDER, raw=raw, results=RESULTS, template=SPACE
+    )
+    real = paths.subject_paths("01", raw=raw, results=RESULTS, template=SPACE)
+
+    for field in fields(real):
+        assert format_for(getattr(placeholder, field.name), "01") == getattr(
+            real, field.name
+        ), field.name
+    assert "{subject}" in str(placeholder.brain)
+
+
+def test_single_file_paths_with_the_placeholder_match_a_real_subject():
+    for build in (
+        lambda s: paths.runinfo_path(RESULTS, s),
+        lambda s: paths.fragment_path(RESULTS, s, "bet"),
+        lambda s: paths.log_path(Path("logs"), s, "bet"),
+        lambda s: paths.raw_t1w_path(Path("raw"), s),
+    ):
+        assert format_for(build("{subject}"), "01") == build("01")
+
+
+@pytest.mark.parametrize("bad", ["{other}", "{subject}x", "{subject}{subject}"])
+def test_only_the_exact_subject_placeholder_is_allowed(bad):
+    with pytest.raises(ValueError):
+        paths.derivative_path(RESULTS, bad, "T1w", ".nii.gz")
+
+
+def test_the_placeholder_is_only_allowed_as_the_subject():
+    with pytest.raises(ValueError):
+        paths.derivative_path(RESULTS, "01", "T1w", ".nii.gz", desc="{subject}")
+
+
+def test_subject_layout_holds_the_fragments_of_the_five_subject_steps():
+    layout = paths.subject_paths("01", raw=Path("raw"), results=RESULTS, template=SPACE)
+
+    assert list(layout.fragments) == ["fetch", "bet", "fast", "flirt", "qc"]
+    assert layout.fragments["bet"] == Path("results/provenance/sub-01/bet.json")
+    assert list(layout.probseg) == ["CSF", "GM", "WM"]
+    assert layout.runinfo == Path("results/provenance/sub-01_runinfo.json")
+
+
+def test_dataset_layout_names_the_files_every_subject_shares():
+    layout = paths.dataset_paths(
+        raw=Path("resources/ds000102"),
+        templates=Path("resources/templates"),
+        results=RESULTS,
+        template=SPACE,
+        resolution=1,
+    )
+
+    assert layout.raw_description == Path("resources/ds000102/dataset_description.json")
+    assert layout.raw_participants == Path("resources/ds000102/participants.tsv")
+    assert layout.template_brain == Path(
+        f"resources/templates/tpl-{SPACE}_res-01_desc-brain_T1w.nii.gz"
+    )
+    assert layout.dataset_description == Path("results/dataset_description.json")
+    assert layout.dseg_tsv == Path("results/dseg.tsv")
+    assert layout.qc_index == Path("results/qc/index.html")
+
+
+@pytest.mark.parametrize("step", ["metadata", "template", "describe", "qc_index"])
+def test_dataset_step_logs_sit_directly_in_logs(step):
+    assert paths.dataset_log_path(Path("logs"), step) == Path(f"logs/{step}.log")

@@ -15,6 +15,7 @@ local/
 resources/
 results/
 logs/
+.snakemake/
 
 # Secrets and OS files
 .env

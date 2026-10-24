@@ -9,13 +9,16 @@ openneuro-t1-pipeline is a reproducible neuroimaging pipeline. It pulls public T
 Run these yourself. Never assume a check passes.
 
 - Install or sync the environment: `uv sync`
-- Run one subject: `uv run openneuro-t1 --subject 01` (add `--force` to redo finished steps)
+- Run one subject end to end: `uv run openneuro-t1 --subject 01` (add `--force` to redo finished steps)
+- Run one step: `uv run openneuro-t1 --subject 01 --step bet`. Dataset-level steps take no `--subject`: `uv run openneuro-t1 --step template`
 - Test: `uv run pytest -q` — single file: `uv run pytest tests/test_paths.py -q`
 - Lint: `uv run ruff check .`
 - Format: `uv run ruff format .` — check only: `uv run ruff format --check .`
-- Workflow dry run (from step 2): `uv run snakemake -n`
-- Workflow run (from step 2): `uv run snakemake --cores 4`
-- Rule graph (from step 2): `uv run snakemake --rulegraph | dot -Tsvg > docs/rulegraph.svg`
+- Workflow dry run: `uv run snakemake -n`
+- Workflow run: `uv run snakemake` (the profile in `workflow/profiles/default/` sets 4 jobs, the memory budget and keep-going)
+- Workflow lint: `uv run snakemake --lint`
+- Snakemake report, after a run: `uv run snakemake --report results/qc/snakemake_report.html`
+- Rule graph: `uv run snakemake --rulegraph | dot -Tsvg > docs/rulegraph.svg`
 - Setup check: `bash local/check_setup.sh` (never with `--aws`: that option signs in to the owner's AWS account)
 
 Every Python command goes through `uv run`. Never `pip`, and never `python`: always `python3`.
@@ -26,19 +29,20 @@ Only what the file tree does not already show.
 
 - Every output filename comes from `openneuro_t1.paths`, which builds BIDS derivative names in BIDS entity order. A hand-built filename anywhere, including in a Snakemake rule, is a bug: Snakemake decides what to rerun by matching paths, so one drifted name silently breaks resumability.
 - `results/` is a BIDS derivatives dataset with its own `dataset_description.json` (`DatasetType` "derivative"). `resources/` holds downloaded and derived inputs: the raw OpenNeuro data, the TemplateFlow cache and the template brain. Both are regenerable and gitignored.
-- The logic lives in functions in `src/openneuro_t1/`. `run_subject.py` is the single-subject command line, and from step 2 the Snakemake rules in `workflow/rules/` call the same functions. Don't put processing logic in a Snakefile.
-- NiWrap's Docker runner is configured in exactly one place. Snakemake never wraps rules in containers of its own: one container layer only.
+- The logic lives in functions in `src/openneuro_t1/`. `openneuro-t1` (`run_subject.py`) is the command line: `--subject` alone runs one subject end to end, and `--step` runs one step. Each Snakemake rule in `workflow/rules/` runs one step as its own `openneuro-t1 --step ... --force` process, so Snakemake, not the step's skip check, decides what reruns. Don't put processing logic in a Snakefile.
+- Parallel jobs never write the same file. Files every subject shares (the raw dataset metadata, the template brain, `dataset_description.json`, `dseg.tsv`, the QC index) are each made by one dataset-level step.
+- NiWrap's Docker runner is configured in exactly one place. Snakemake never wraps rules in containers of its own: one container layer only. `snakemake --lint` asks for a conda environment or container on every rule; that lint stays, by design.
 - `TEMPLATEFLOW_HOME` is set to `resources/templateflow` before TemplateFlow is imported, so the template lives with the project instead of a hidden cache.
 - The FSL image is amd64 and runs under emulation on Apple Silicon. If it fails because of the platform, `DOCKER_DEFAULT_PLATFORM=linux/amd64` is the one allowed fix, and using it must be recorded.
 - A step is finished only when all its outputs exist. A failed step must not leave partial outputs that a later run would mistake for finished ones.
-- Every run that executes at least one step writes `results/provenance/sub-<id>_runinfo.json`: package versions, every Docker image used with its digest, and seconds per step. A run where every step is skipped leaves the existing record untouched, so it always describes the run that made the outputs.
+- Each subject step that runs writes a provenance fragment under `results/provenance/sub-<id>/`: package versions, every Docker image it used with its digest, and its timings. The fragments are merged into `results/provenance/sub-<id>_runinfo.json` by the subject's last Snakemake rule, or at the end of `openneuro-t1 --subject`. A skipped step leaves its fragment untouched, so the record always describes the run that made the outputs.
 
 ## Invariants
 
 Permanent. A change that breaks one is wrong even if it works and the tests pass.
 
 - Only public OpenNeuro data, currently `ds000102`. Never add data from a patient, a hospital, or any dataset that is not openly licensed.
-- Imaging data is never committed. `resources/`, `results/`, `logs/` and `local/` stay gitignored, and no `.nii` or `.nii.gz` file is ever tracked. `tests/test_invariants.py` enforces this; never weaken its checks.
+- Imaging data is never committed. `resources/`, `results/`, `logs/`, `local/` and `.snakemake/` stay gitignored, and no `.nii` or `.nii.gz` file is ever tracked. `tests/test_invariants.py` enforces this; never weaken its checks.
 - S3 reads are anonymous (`--no-sign-request`). No AWS credentials, profiles or account IDs in code, config, logs, tests or committed files. Secrets live in `.env` only. Anything that touches the owner's AWS account (EC2, billing) is the owner's to do.
 - Don't use the AWS MCP server or AWS skills, and don't make AWS API calls with any profile. S3 reads use the AWS CLI with `--no-sign-request` only. EC2 and other account work happen only in a step that explicitly allows it.
 - No research claims. The README, docs and write-ups describe what the pipeline does, not findings. Don't add statistics or interpretations of the outputs.

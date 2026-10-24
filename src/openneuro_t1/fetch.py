@@ -1,4 +1,4 @@
-"""Download a subject's T1w from OpenNeuro on S3 and build the MNI template brain."""
+"""Download raw data from OpenNeuro on S3 and build the MNI template brain."""
 
 import logging
 import os
@@ -10,19 +10,19 @@ from typing import Any
 import nibabel as nib
 
 from .config import load_config, project_path
-from .paths import atomic_output, raw_t1w_path, template_brain_path
+from .paths import (
+    atomic_output,
+    raw_dataset_description_path,
+    raw_participants_path,
+    raw_t1w_path,
+    template_brain_path,
+)
 
 log = logging.getLogger(__name__)
 
-DATASET_FILES = ("dataset_description.json", "participants.tsv")
 
-
-def sync_command(subject: str, s3_uri: str, raw: Path) -> list[str]:
-    """The anonymous `aws s3 sync` argument list for one subject's T1w.
-
-    The dataset metadata files are added only while they are missing, so a
-    finished download syncs nothing.
-    """
+def sync_command(s3_uri: str, raw: Path, includes: list[str]) -> list[str]:
+    """The anonymous `aws s3 sync` argument list that fetches only the given patterns."""
     command = [
         "aws",
         "s3",
@@ -32,27 +32,42 @@ def sync_command(subject: str, s3_uri: str, raw: Path) -> list[str]:
         f"{raw}/",
         "--exclude",
         "*",
-        "--include",
-        f"sub-{subject}/anat/*T1w.nii.gz",
     ]
-    for name in DATASET_FILES:
-        if not (raw / name).exists():
-            command += ["--include", name]
+    for pattern in includes:
+        command += ["--include", pattern]
     return command
 
 
-def fetch_subject(subject: str, config: dict[str, Any] | None = None) -> Path:
-    """Sync one subject's T1w into the raw dataset folder and return its path."""
-    config = config or load_config()
+def _sync(config: dict[str, Any], includes: list[str]) -> Path:
+    """Run the sync into the raw dataset folder and return that folder."""
     raw = project_path(config["paths"]["raw"])
     raw.mkdir(parents=True, exist_ok=True)
-    command = sync_command(subject, config["s3_uri"], raw)
+    command = sync_command(config["s3_uri"], raw, includes)
     log.info("Command: %s", shlex.join(command))
     result = subprocess.run(command, capture_output=True, text=True, check=False)
     log.info("stdout:\n%s", result.stdout)
     log.info("stderr:\n%s", result.stderr)
     if result.returncode != 0:
         raise RuntimeError(f"aws s3 sync failed with exit code {result.returncode}")
+    return raw
+
+
+def fetch_metadata(config: dict[str, Any] | None = None) -> list[Path]:
+    """Fetch the raw dataset_description.json and participants.tsv."""
+    config = config or load_config()
+    raw = project_path(config["paths"]["raw"])
+    files = [raw_dataset_description_path(raw), raw_participants_path(raw)]
+    _sync(config, [file.relative_to(raw).as_posix() for file in files])
+    missing = [file for file in files if not file.exists()]
+    if missing:
+        raise FileNotFoundError(f"Not found after sync: {', '.join(map(str, missing))}")
+    return files
+
+
+def fetch_subject(subject: str, config: dict[str, Any] | None = None) -> Path:
+    """Fetch one subject's T1w into the raw dataset folder and return its path."""
+    config = config or load_config()
+    raw = _sync(config, [f"sub-{subject}/anat/*T1w.nii.gz"])
     t1w = raw_t1w_path(raw, subject)
     if not t1w.exists():
         raise FileNotFoundError(f"No T1w image for sub-{subject} after sync: {t1w}")

@@ -10,12 +10,12 @@ import nibabel as nib
 import niwrap
 from niwrap import fsl
 
-from .paths import atomic_output
+from .paths import TISSUE_LABELS, atomic_output
 
 log = logging.getLogger(__name__)
 
 # Label values 1, 2, 3 in the dseg image, and FAST partial-volume outputs 0, 1, 2.
-TISSUES = ("CSF", "GM", "WM")
+TISSUES = TISSUE_LABELS
 
 FAST_T1 = 1  # FAST image type: 1 = T1
 FAST_BASENAME = "fast"

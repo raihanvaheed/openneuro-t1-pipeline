@@ -1,0 +1,21 @@
+configfile: "config/config.yaml"
+
+
+report: "report/workflow.rst"
+
+
+wildcard_constraints:
+    subject="[0-9]+",
+
+
+include: "rules/common.smk"
+include: "rules/dataset.smk"
+include: "rules/subject.smk"
+
+
+rule all:
+    input:
+        dataset_layout().qc_index,
+        dataset_layout().dataset_description,
+        dataset_layout().dseg_tsv,
+        expand(subject_layout().runinfo, subject=config["subjects"]),

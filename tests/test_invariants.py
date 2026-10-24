@@ -7,7 +7,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-NEVER_TRACKED = ("local/", "resources/", "results/", "logs/")
+NEVER_TRACKED = ("local/", "resources/", "results/", "logs/", ".snakemake/")
 # Written so that this file does not contain the strings it searches for.
 AWS_ACCESS_KEY = re.compile(r"AKIA" + r"[0-9A-Z]{16}")
 AWS_SECRET_KEY_NAME = "aws_secret_" + "access_key"

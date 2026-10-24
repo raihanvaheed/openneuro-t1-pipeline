@@ -1,0 +1,1 @@
+Skull strip. The subject's raw T1-weighted image in three orthogonal views (sagittal, coronal, axial), with the outline of the BET brain mask drawn in red. The scalp and skull stay visible outside the outline.

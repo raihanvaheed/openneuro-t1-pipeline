@@ -1,0 +1,5 @@
+cores: 4
+resources:
+  mem_mb: 6000
+keep-going: true
+printshellcmds: true

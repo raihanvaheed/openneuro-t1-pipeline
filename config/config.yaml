@@ -1,6 +1,6 @@
 dataset: ds000102
 s3_uri: s3://openneuro.org/ds000102
-subjects: ["01"]
+subjects: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
 template: MNI152NLin2009cAsym
 template_resolution: 1
 paths:
@@ -15,3 +15,9 @@ fast:
   classes: 3
 flirt:
   dof: 12
+mem_mb:
+  default: 500
+  bet: 1000
+  fast: 2000
+  flirt: 1000
+  qc: 1000
