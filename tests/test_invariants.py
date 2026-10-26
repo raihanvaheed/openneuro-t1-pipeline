@@ -24,6 +24,15 @@ def tracked_files() -> list[str]:
     return result.stdout.splitlines()
 
 
+def pngs_outside_docs_images(files: list[str]) -> list[str]:
+    """The only images in git are the README's figures in docs/images/."""
+    return [
+        f
+        for f in files
+        if f.lower().endswith(".png") and not f.startswith("docs/images/")
+    ]
+
+
 def test_gitignore_lists_the_folders_that_hold_data_and_local_files():
     lines = (PROJECT_ROOT / ".gitignore").read_text().splitlines()
     for entry in NEVER_TRACKED:
@@ -33,6 +42,25 @@ def test_gitignore_lists_the_folders_that_hold_data_and_local_files():
 def test_no_imaging_data_is_tracked():
     offenders = [f for f in tracked_files() if f.endswith((".nii", ".nii.gz"))]
     assert offenders == []
+
+
+def test_tracked_png_files_are_only_in_docs_images():
+    assert pngs_outside_docs_images(tracked_files()) == []
+
+
+def test_the_png_rule_finds_a_figure_outside_docs_images():
+    files = [
+        "docs/images/sub-01_desc-tissues_dseg.png",
+        "results/sub-01/figures/sub-01_desc-tissues_dseg.png",
+        "README.png",
+        "docs/figure.PNG",
+        "docs/rulegraph.svg",
+    ]
+    assert pngs_outside_docs_images(files) == [
+        "results/sub-01/figures/sub-01_desc-tissues_dseg.png",
+        "README.png",
+        "docs/figure.PNG",
+    ]
 
 
 def test_nothing_from_the_gitignored_folders_is_tracked():
